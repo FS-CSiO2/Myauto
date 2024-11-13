@@ -35,7 +35,7 @@ rem 强制重启共享的workstation服务
     net start workstation
 net use "\\192.168.1.254\共享文件夹" /user:"user" "1"
 setlocal
-set "file1=\192.168.1.254\共享文件夹\自动更新.txt"
+set "file1=\\192.168.1.254\共享文件夹\自动更新.txt"
 set "file2=自动更新.bat"
 :: 读取第一个文件的第一行
 set /p line1=<"%file1%"
