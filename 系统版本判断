@@ -1,0 +1,13 @@
+@echo off
+for /f "tokens=4" %%i in ('ver') do set version=%%i
+ 
+:: 假设系统版本以10.x.x.x的格式显示
+set majorVersion=%version:~0,2%
+ 
+if %majorVersion% GEQ 10  (
+    echo 当前系统版本是 Windows 10或以上
+) else (
+    echo 当前系统版本低于 Windows 10
+)
+ 
+pause
