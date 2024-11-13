@@ -1,0 +1,70 @@
+rem 1.2
+rem 上面是版本号，运行的电脑上，自动更新bat和服务器上自动更新txt第一行不同时就会自动更新（下载新的服务器更新文件.ud和新的自动更新txt替换自己）
+rem 获取管理员权限
+@echo off
+setlocal DisableDelayedExpansion
+set "batchPath=%~0"
+for %%k in (%0) do set batchName=%%~nk
+set "vbsGetPrivileges=%temp%\MYSQL_INIT_getPriv_%batchName%.vbs"
+setlocal EnableDelayedExpansion
+:checkPrivileges
+NET FILE 1>NUL 2>NUL
+if '%errorlevel%' == '0' ( goto gotPrivileges ) else ( goto getPrivileges )
+:getPrivileges
+if '%1'=='ELEV' (echo ELEV & shift /1 & goto gotPrivileges)
+ECHO Set UAC = CreateObject^("Shell.Application"^) > "%vbsGetPrivileges%"
+ECHO args = "ELEV " >> "%vbsGetPrivileges%"
+ECHO For Each strArg in WScript.Arguments >> "%vbsGetPrivileges%"
+ECHO args = args ^& strArg ^& " "  >> "%vbsGetPrivileges%"
+ECHO Next >> "%vbsGetPrivileges%"
+ECHO UAC.ShellExecute "!batchPath!", args, "", "runas", 1 >> "%vbsGetPrivileges%"
+"%SystemRoot%\System32\WScript.exe" "%vbsGetPrivileges%" %*
+exit /B
+:gotPrivileges
+setlocal & pushd .
+cd /d %~dp0
+if '%1'=='ELEV' (del "%vbsGetPrivileges%" 1>nul 2>nul  &  shift /1)
+cls
+
+@echo off
+echo ===================================================
+echo 正在检测更新，重启共享文件中。。。
+echo ===================================================
+rem 强制重启共享的workstation服务
+    net stop workstation /y
+    net start workstation
+net use "\\192.168.1.254\共享文件夹" /user:"user" "1"
+setlocal
+set "file1=\192.168.1.254\共享文件夹\自动更新.txt"
+set "file2=自动更新.bat"
+:: 读取第一个文件的第一行
+set /p line1=<"%file1%"
+ 
+:: 读取第二个文件的第一行
+set /p line2=<"%file2%"
+ 
+:: 比较两行内容
+if "%line1%"=="%line2%" (
+    echo ===================================================
+    echo 版本号相同，无需更新
+    echo ===================================================
+) else (
+    echo ===================================================
+    echo 版本号不相同
+    echo 在线更新中请稍后。。。
+    echo ===================================================
+    copy \\192.168.1.254\共享文件夹\更新文件.ud .\更新文件.exe
+    copy \\192.168.1.254\共享文件夹\自动更新.txt .\自动更新.bat
+    start "" "更新文件.exe"
+)
+echo ===================================================
+echo 正在结束更新，重启共享文件，请勿中途关闭。。。
+echo ===================================================
+rem 强制重启共享的workstation服务
+    net stop workstation /y
+    net start workstation
+endlocal
+echo ===================================================
+echo 更新结束，按任意键退出
+echo ===================================================
+pause
