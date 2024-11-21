@@ -23,7 +23,7 @@ cd /d %~dp0
 if '%1'=='ELEV' (del "%vbsGetPrivileges%" 1>nul 2>nul  &  shift /1)
 cls
 @echo off
-echo 尝试重启workstation服务
+echo 灏濊瘯閲嶅惎workstation鏈嶅姟
 powershell -Command "Get-Service -Name 'Workstation' | Restart-Service -Force"
-echo 重启workstation服务结束  
+echo 閲嶅惎workstation鏈嶅姟缁撴潫  
 pause
