@@ -4,6 +4,16 @@ import numpy as np
 import pytesseract
 import time
 from PIL import ImageGrab
+import threading
+import keyboard
+
+def listen_for_esc():
+    # 当按下esc键时，设置全局变量stop_event为True
+    keyboard.wait('esc')  #线程会阻塞直到按下esc键
+    stop_event.set() #设置全局变量stop_event为True
+    print("esc键被按下，停止程序")
+
+
 
 def find_template(screen_img, template,w,h):  
     # 应用模板匹配  
@@ -87,10 +97,11 @@ def Blur(gray_frame, binary_num):#binary_num是二值化阈值
     return RP_Numbers
 
 def main():
-    while True:
+    while not stop_event.is_set(): # 持续循环直到收到停止信号
+        #stop_event.wait(0.1)
         time.sleep(0.1)
         # 指定截取区域的左上角和右下角坐标
-        left, top, right, bottom = 1054, 573, 1133, 595 #按照实际需求调整
+        left, top, right, bottom = 1054, 573, 1133, 595 #验证码区域，根据实际情况调整
         screenshot = pyautogui.screenshot(region=(left, top, right - left, bottom - top))
 
         # 将截图转换为NumPy数组
@@ -108,9 +119,9 @@ def main():
         if len(RP_Numbers2) != 4:
             RP_Numbers2=Blur(gray_frame, 195)
         if len(RP_Numbers2) != 4:
-            pyautogui.click(1078, 584) #点击验证码图片进行刷新
+            pyautogui.click(1078, 584) #点击验证码刷新
             time.sleep(0.1)
-            pyautogui.click(950, 584) #点击输入框，然后跳过当前循环重新开始
+            pyautogui.click(950, 584)#点击输入框，然后跳过当前循环重新开始
             continue
         #点击输入框并输入数字
         pyautogui.click(950, 584)
@@ -130,7 +141,16 @@ def main():
             MyclickLoop("E:\\OAauto\\OAAuto6\\PNG\\yes.png")#点击确定
             break
 
-# 延时3秒
+#声明全局变量
+global stop_event
+stop_event = threading.Event() #创建一个事件对象
+
+ # 创建并启动监听线程
+esc_listener_thread = threading.Thread(target=listen_for_esc)
+esc_listener_thread.start()
+
+# 延时3秒后运行主函数
 time.sleep(3)
 main()
-
+esc_listener_thread.join()
+print("结束")
