@@ -7,13 +7,11 @@ from PIL import ImageGrab
 import threading
 import keyboard
 
-def listen_for_esc():
+def listen_for_esc(stop_event):
     # 当按下esc键时，设置全局变量stop_event为True
     keyboard.wait('esc')  #线程会阻塞直到按下esc键
     stop_event.set() #设置全局变量stop_event为True
-    print("esc键被按下，停止程序")
-
-
+    print("收到退出信号，停止程序")
 
 def find_template(screen_img, template,w,h):  
     # 应用模板匹配  
@@ -96,9 +94,8 @@ def Blur(gray_frame, binary_num):#binary_num是二值化阈值
     print(f"RP_Numbers={RP_Numbers},binary_num={binary_num}")
     return RP_Numbers
 
-def main():
+def main_task(stop_event):
     while not stop_event.is_set(): # 持续循环直到收到停止信号
-        #stop_event.wait(0.1)
         time.sleep(0.1)
         # 指定截取区域的左上角和右下角坐标
         left, top, right, bottom = 1054, 573, 1133, 595 #验证码区域，根据实际情况调整
@@ -140,17 +137,22 @@ def main():
         if pd == 0:
             MyclickLoop("E:\\OAauto\\OAAuto6\\PNG\\yes.png")#点击确定
             break
+        
+def main():
+    stop_event = threading.Event() # 创建一个事件对象，用于控制主任务的停止
+    # 创建并启动主任务线程
+    main_thread = threading.Thread(target=main_task, args=(stop_event,))
+    main_thread.start()
 
-#声明全局变量
-global stop_event
-stop_event = threading.Event() #创建一个事件对象
-
- # 创建并启动监听线程
-esc_listener_thread = threading.Thread(target=listen_for_esc)
-esc_listener_thread.start()
+    # 创建并启动监控 'esc' 键的线程
+    escape_thread = threading.Thread(target=listen_for_esc, args=(stop_event,))
+    escape_thread.daemon = True # 设置为守护线程，主线程退出时，该线程也会退出
+    escape_thread.start()
+    # 等待主任务线程完成
+    main_thread.join()
+    print("程序已退出")
 
 # 延时3秒后运行主函数
 time.sleep(3)
 main()
-esc_listener_thread.join()
 print("结束")
